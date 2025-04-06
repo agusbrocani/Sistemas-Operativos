@@ -16,5 +16,5 @@ jobs:
       - name: Cancel PR if not from develop
         if: github.head_ref != 'develop'
         run: |
-          echo "❌ Pull request to 'main' must come from 'develop'."
+          echo "❌ Pull request a la rama 'main' debe venir desde la rama 'develop'."
           exit 1
