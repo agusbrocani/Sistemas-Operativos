@@ -1,0 +1,20 @@
+name: Protect Main Branch
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  block-non-develop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel PR if not from develop
+        if: github.head_ref != 'develop'
+        run: |
+          echo "❌ Pull request to 'main' must come from 'develop'."
+          exit 1
