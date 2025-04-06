@@ -1,4 +1,4 @@
-name: Protect Main Branch
+name: Protección de merge a rama 'main'.
 
 on:
   pull_request:
@@ -10,11 +10,11 @@ on:
       - reopened
 
 jobs:
-  block-non-develop:
+  block-non-develop-to-main:
+    if: github.base_ref == 'main' && github.head_ref != 'develop'
     runs-on: ubuntu-latest
     steps:
-      - name: Cancel PR if not from develop
-        if: ${{ github.head_ref != 'develop' }}
+      - name: Canelar PR hacia 'main' si no viene desde la rama 'develop'.
         run: |
-          echo "❌ Un pull request hacia la rama 'main' debe venir desde la rama 'develop'."
+          echo "❌ El pull request debe provenir desde 'develop' hacia 'main'."
           exit 1
