@@ -1,6 +1,10 @@
-name: Protect Main Branch
+name: Protect Branches
 
 on:
+  push:
+    branches:
+      - main
+      - develop
   pull_request:
     branches:
       - main
@@ -10,11 +14,22 @@ on:
       - reopened
 
 jobs:
-  block-non-develop:
+  block-direct-push:
+    name: ❌ Bloquear Push directo a 'main' o 'develop'
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fallar en un push directo
+        run: |
+          echo "❌  Los push directo a ramas 'main' o 'develop' no estan permitidos."
+          exit 1
+
+  block-invalid-pr:
+    name: ❌ Block PRs to Main Not From Develop
+    if: github.event_name == 'pull_request' && github.head_ref != 'develop'
     runs-on: ubuntu-latest
     steps:
       - name: Cancel PR if not from develop
-        if: github.head_ref != 'develop'
         run: |
-          echo "❌ Pull request a la rama 'main' debe venir desde la rama 'develop'."
+          echo "❌ Un pull request hacia la rama 'main' deben venir desde la rama 'develop'."
           exit 1
