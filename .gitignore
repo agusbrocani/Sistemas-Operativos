@@ -1,0 +1,13 @@
+/bin/         	# Carpeta de archivos de compilacion (bin) en la raiz
+/obj/         	# Carpeta de archivos intermedios de build (obj) en la raiz
+*.layout      	# Archivos con extension .layout (proyecto)
+*.o           	# Archivos objeto generados por compiladores (gcc, clang, etc.)
+*.out         	# Binarios ejecutables generados en Linux
+*.exe         	# Ejecutables generados en Windows
+*.a           	# Archivos de biblioteca estatica
+*.so          	# Archivos de biblioteca compartida en Linux
+*.dll         	# Bibliotecas dinamicas de Windows
+*.d           	# Archivos de dependencias generados por compiladores
+*.so		# Ignora archivos de biblioteca compartida en Linux
+*.dll		# Ignora bibliotecas dinamicas de Windows
+*.d		# Ignora archivos de dependencias generados por algunos compiladores
