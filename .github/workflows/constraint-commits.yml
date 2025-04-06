@@ -11,10 +11,14 @@ on:
 
 jobs:
   block-non-develop-to-main:
-    if: github.base_ref == 'main' && github.head_ref != 'develop'
     runs-on: ubuntu-latest
     steps:
-      - name: Canelar PR hacia 'main' si no viene desde la rama 'develop'.
+      - name: Verificar que la PR hacia 'main' viene desde la rama 'develop'.
         run: |
-          echo "❌ El pull request debe provenir desde 'develop' hacia 'main'."
-          exit 1
+          echo "⚠️ Chequeando PR a main..."
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "❌ La pull request debe provenir desde 'develop' hacia 'main'."
+            exit 1
+          fi
+          echo "✅ PR correcta: de 'develop' a 'main'."
+          exit 0
