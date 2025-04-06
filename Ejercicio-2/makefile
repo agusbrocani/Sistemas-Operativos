@@ -35,11 +35,13 @@ $(CLIENTE): $(CLIENTE_OBJS)
 # tomar los .o de servidor y compilar el ejecutable servidor
 $(SERVIDOR): $(SERVIDOR_OBJS)
 	$(CXX) $(CXXFLAGS) -o $(SERVIDOR) $(SERVIDOR_OBJS)
+	@echo "Se han compilado los archivos: '$(CLIENTE_SRCS)' y '$(SERVIDOR_SRCS)'."
 
 # Regla para limpiar los archivos temporales
 # Borra todo lo generado (.o + ejecutables).
 clean:
 	rm -f $(CLIENTE) $(SERVIDOR) $(CLIENTE_OBJS) $(SERVIDOR_OBJS)
+	@echo "Se han eliminado los archivos: '$(CLIENTE)', '$(SERVIDOR)', '$(CLIENTE_OBJS)' y '$(SERVIDOR_OBJS)'."
 
 # make => compila todos los archivos
 # make clean => elimina todos los .o y ejecutable
