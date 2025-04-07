@@ -1,0 +1,18 @@
+# depslib dependency file v1.0
+1743992163 source:c:\users\pc\desktop\sistemas-operativos\ejercicio-2\cliente\cliente.cpp
+	"../bibliotecas/cliente/cliente.h"
+
+1743994286 c:\users\pc\desktop\sistemas-operativos\ejercicio-2\bibliotecas\cliente\cliente.h
+	<iostream>
+	<exception>
+	<winsock2.h>
+	<sys/socket.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<unistd.h>
+	<cerrno>
+	<cstring>
+
+1743992232 source:c:\users\pc\desktop\sistemas-operativos\ejercicio-2\cliente\funcionesymetodoscliente.cpp
+	"../bibliotecas/cliente/cliente.h"
+

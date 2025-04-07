@@ -1,6 +1,7 @@
 /bin/         	# Carpeta de archivos de compilacion (bin) en la raiz
 /obj/         	# Carpeta de archivos intermedios de build (obj) en la raiz
 *.layout      	# Archivos con extension .layout (proyecto)
+*.depend	# Archivos con extension .depend (proyecto)
 *.o           	# Archivos objeto generados por compiladores (gcc, clang, etc.)
 *.out         	# Binarios ejecutables generados en Linux
 *.exe         	# Ejecutables generados en Windows
