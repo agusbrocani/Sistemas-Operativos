@@ -1,4 +1,5 @@
 #include "../bibliotecas/servidor/servidor.h"
+#include "../bibliotecas/servidor/socketHelper.h"
 
 int main()
 {
@@ -6,9 +7,13 @@ int main()
         Servidor servidor;
         tInfoDireccionSocket infoDireccionSocket;
 
-        inicializarIPPuerto(&infoDireccionSocket);
+        SocketHelper::inicializarIPPuerto(&infoDireccionSocket);
+
         servidor.abrirCanalDeComunicacionTCP();
         servidor.enlazarSocketAIPYPuerto(&infoDireccionSocket);
+        servidor.escucharConexionesEntrantes();
+        servidor.aceptarConexiones();
+
     } catch(const exception& ex) {
         cerr << ex.what() << endl;
     }

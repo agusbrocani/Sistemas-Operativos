@@ -8,5 +8,5 @@ obj/
 *~
 *.swp
 Debug/
-servidor
-cliente
+/servidor
+/cliente
