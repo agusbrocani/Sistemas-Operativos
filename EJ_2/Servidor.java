@@ -1,43 +1,94 @@
-
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Servidor {
     private static final int PUERTO = 4000;
     private static final int MAX_CLIENTES = 4;
     private static final Semaphore conexiones = new Semaphore(MAX_CLIENTES);
+    private static final AtomicInteger contadorClientes = new AtomicInteger(1);
 
     public static void main(String[] args) {
+        while (true) {
+            try {
+                iniciarServidor();
+            } catch (Exception e) {
+                System.err.println("💥 Error en el servidor: " + e.getMessage());
+                e.printStackTrace();
+                System.out.println("Reintentando en 1 segundo...");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {}
+            }
+        }
+    }
+
+    private static void iniciarServidor() throws IOException {
         try (ServerSocket servidor = new ServerSocket(PUERTO)) {
-            System.out.println("Servidor escuchando en el puerto " + PUERTO);
+            System.out.println("🟢 Servidor escuchando en el puerto " + PUERTO);
 
             while (true) {
-                Socket cliente = servidor.accept();
-                System.out.println("Cliente conectado desde " + cliente.getInetAddress());
+                aceptarCliente(servidor);
+            }
+        }
+    }
 
-                conexiones.acquire(); // ↓ ↓ ↓ bloquea si ya hay 4 clientes
-                new Thread(() -> {
-                    try (
-                        BufferedReader in = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
-                        PrintWriter out = new PrintWriter(cliente.getOutputStream(), true);
-                    ) {
-                        out.println("Bienvenido al servidor. Enviá un mensaje:");
-                        String msg = in.readLine();
-                        System.out.println("Cliente dijo: " + msg);
-                        out.println("Recibido: " + msg);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        try { cliente.close(); } catch (IOException ignored) {}
-                        conexiones.release(); // libera el slot
-                        System.out.println("Cliente desconectado. Slots disponibles: " + conexiones.availablePermits());
-                    }
-                }).start();
+    private static void aceptarCliente(ServerSocket servidor) {
+        try {
+            Socket cliente = servidor.accept();
+            conexiones.acquire();
+
+            int clienteId = contadorClientes.getAndIncrement();
+            System.out.println("👤 Cliente #" + clienteId + " conectado desde " + cliente.getInetAddress()
+                    + ". Slots disponibles: " + conexiones.availablePermits());
+
+            manejarCliente(cliente, clienteId);
+
+        } catch (IOException e) {
+            System.err.println("⚠️ Error al aceptar cliente: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("⛔ Interrupción del semáforo");
+        }
+    }
+
+    private static void manejarCliente(Socket cliente, int id) {
+        new Thread(() -> {
+            try (
+                BufferedReader in = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
+                PrintWriter out = new PrintWriter(cliente.getOutputStream(), true)
+            ) {
+                out.println("Bienvenido. Enviá un número. Enviá -1 para salir.");
+
+                procesarMensajes(in, out, id);
+
+            } catch (IOException e) {
+                System.err.println("❌ Error con cliente #" + id + ": " + e.getMessage());
+            } finally {
+                try { cliente.close(); } catch (IOException ignored) {}
+                conexiones.release();
+                System.out.println("🔁 Cliente #" + id + " desconectado. Slots disponibles: " + conexiones.availablePermits());
+            }
+        }).start();
+    }
+
+    private static void procesarMensajes(BufferedReader in, PrintWriter out, int id) throws IOException {
+        String msg;
+        while ((msg = in.readLine()) != null) {
+            System.out.println("📨 Cliente #" + id + " dijo: " + msg);
+
+            if (msg.trim().equals("-1")) {
+                out.println("👋 Hasta luego.");
+                break;
             }
 
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            try {
+                int numero = Integer.parseInt(msg.trim());
+                out.println("✅ Respuesta: " + (numero * 2));
+            } catch (NumberFormatException e) {
+                out.println("⚠️ Debés ingresar un número.");
+            }
         }
     }
 }
