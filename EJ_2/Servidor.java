@@ -2,14 +2,25 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Servidor {
     private static final int PUERTO = 4000;
     private static final int MAX_CLIENTES = 4;
     private static final Semaphore conexiones = new Semaphore(MAX_CLIENTES);
     private static final AtomicInteger contadorClientes = new AtomicInteger(1);
+    private static final CopyOnWriteArrayList<PrintWriter> clientesActivos = new CopyOnWriteArrayList<>();
 
     public static void main(String[] args) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("🛑 Servidor finalizando. Notificando clientes...");
+            for (PrintWriter out : clientesActivos) {
+                try {
+                    out.println("🚨 El servidor se cerró inesperadamente. Adiós.");
+                } catch (Exception ignored) {}
+            }
+        }));
+
         while (true) {
             try {
                 iniciarServidor();
@@ -59,13 +70,17 @@ public class Servidor {
                 BufferedReader in = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
                 PrintWriter out = new PrintWriter(cliente.getOutputStream(), true)
             ) {
+                clientesActivos.add(out);
+
                 out.println("Bienvenido. Enviá un número. Enviá -1 para salir.");
+                out.println("Sos el cliente #" + id);
 
                 procesarMensajes(in, out, id);
 
             } catch (IOException e) {
                 System.err.println("❌ Error con cliente #" + id + ": " + e.getMessage());
             } finally {
+                clientesActivos.removeIf(p -> p.checkError());
                 try { cliente.close(); } catch (IOException ignored) {}
                 conexiones.release();
                 System.out.println("🔁 Cliente #" + id + " desconectado. Slots disponibles: " + conexiones.availablePermits());
