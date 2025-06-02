@@ -18,10 +18,16 @@ public class ConsoleClient {
                     String serverResponse;
                     while ((serverResponse = in.readLine()) != null) {
                         System.out.println(serverResponse);
+                        if ("Servidor cerrándose. Gracias por usar el servicio.".equalsIgnoreCase(serverResponse)) {
+                            break;
+                        }
                     }
+                    // Si el servidor cierra la conexión abruptamente
+                    System.exit(0);
                 } catch (IOException e) {
                     if (!socket.isClosed()) {
                         System.out.println("Conexión con el servidor perdida.");
+                        System.exit(0);
                     }
                 }
             });
@@ -42,4 +48,4 @@ public class ConsoleClient {
             System.err.println("Error de conexión: " + e.getMessage());
         }
     }
-} 
+}

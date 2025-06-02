@@ -8,11 +8,12 @@ public class Server {
     private static final int PORT = 12345;
     private static final int MAX_ACTIVE_CLIENTS = 1;  // Conexiones activas máximas
     private static final int CONNECTION_BACKLOG = 3; // Cola de espera
-    private static List<ClientHandler> activeClients = new ArrayList<>();
-    private static Queue<ClientHandler> waitingClients = new LinkedList<>();
+    private static List<ClientHandler> activeClients = Collections.synchronizedList(new ArrayList<>());
+    private static Queue<ClientHandler> waitingClients = new ConcurrentLinkedQueue<>();
     private static ServerSocket serverSocket;
     private static boolean running = true;
     private static final AtomicInteger clientId = new AtomicInteger(1);
+    private static volatile boolean closedServer = false;
 
     public static void main(String[] args) {
         try {
@@ -25,6 +26,7 @@ public class Server {
             // Thread para manejar el cierre del servidor
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 running = false;
+                closedServer = true;
                 closeServer();
             }));
 
@@ -46,38 +48,48 @@ public class Server {
         } catch (IOException e) {
             System.out.println("Error iniciando el servidor: " + e.getMessage());
         } finally {
-            closeServer();
+            if (!closedServer) {
+                closeServer();
+            }
+        }
+    }
+
+    private static void removeInactiveClients() {
+        synchronized(activeClients) {
+            activeClients.removeIf(client -> !client.isActive());
         }
     }
 
     private static void handleNewConnection(Socket clientSocket) {
         // Limpiar clientes desconectados
-        activeClients.removeIf(client -> !client.isActive());
+        removeInactiveClients();
 
-        if (activeClients.size() < MAX_ACTIVE_CLIENTS) {
-            int assignedClientId = clientId.getAndIncrement();
-            // Hay espacio para un cliente activo
-            ClientHandler clientHandler = new ClientHandler(clientSocket, assignedClientId, false);
-            activeClients.add(clientHandler);
-            new Thread(clientHandler).start();
-            System.out.println("Nuevo cliente conectado con ID: " + clientHandler.getClientId() + ". Total activos: " + activeClients.size());
+        int assignedClientId = clientId.getAndIncrement();
+
+        synchronized (activeClients) {
+            if (activeClients.size() < MAX_ACTIVE_CLIENTS) {
+                ClientHandler clientHandler = new ClientHandler(clientSocket, assignedClientId, false);
+                activeClients.add(clientHandler);
+                new Thread(clientHandler).start();
+                System.out.println("Nuevo cliente conectado con ID: " + clientHandler.getClientId() + ". Total activos: " + activeClients.size());
+                return;
+            }
+        }
+
+        // No hay espacio, añadir a la cola de espera
+        if (waitingClients.size() < CONNECTION_BACKLOG) {
+            ClientHandler waitingClient = new ClientHandler(clientSocket, assignedClientId, true);
+            waitingClients.offer(waitingClient);
+            new Thread(waitingClient).start();
+            System.out.println("Cliente en cola con ID: " + waitingClient.getClientId() + ". Posición: " + waitingClients.size());
         } else {
-            int assignedClientId = clientId.getAndIncrement();
-            // No hay espacio, añadir a la cola de espera
-            if (waitingClients.size() < CONNECTION_BACKLOG) {
-                ClientHandler waitingClient = new ClientHandler(clientSocket, assignedClientId, true);
-                waitingClients.offer(waitingClient);
-                new Thread(waitingClient).start();
-                System.out.println("Cliente en cola con ID: " + waitingClient.getClientId() + ". Posición: " + waitingClients.size());
-            } else {
-                // Cola llena
-                try {
-                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                    out.println("❌ Servidor y cola de espera llenos. Por favor, intente más tarde.");
-                    clientSocket.close();
-                } catch (IOException e) {
-                    System.out.println("Error rechazando cliente: " + e.getMessage());
-                }
+            // Cola llena
+            try {
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                out.println("❌ Servidor y cola de espera llenos. Por favor, intente más tarde.");
+                clientSocket.close();
+            } catch (IOException e) {
+                System.out.println("Error rechazando cliente: " + e.getMessage());
             }
         }
     }
@@ -88,7 +100,7 @@ public class Server {
                 Thread.sleep(1000); // Revisar la cola cada segundo
                 
                 // Limpiar clientes desconectados
-                activeClients.removeIf(client -> !client.isActive());
+                removeInactiveClients();
 
                 // Procesar clientes en espera si hay espacio
                 while (activeClients.size() < MAX_ACTIVE_CLIENTS && !waitingClients.isEmpty()) {
@@ -114,11 +126,29 @@ public class Server {
                 System.out.println("Servidor cerrado.");
             }
             // Cerrar todas las conexiones
-            for (ClientHandler client : activeClients) {
-                client.sendMessage("⚠️ Servidor cerrándose. Gracias por usar el servicio.");
+            synchronized (activeClients) {
+                for (ClientHandler client : activeClients) {
+                    String serverMessage = closedServer ? 
+                    "Se cayo el servidor. Finalizando la conexión."
+                    : "Servidor cerrándose. Gracias por usar el servicio.";
+                    if (closedServer) {
+                        client.sendMessage(serverMessage);
+                    } else {
+                        System.out.println(serverMessage);
+                    }
+                } 
             }
+            // No es necesario synchronized porque se usa ConcurrentLinkedQueue(Estructura de datos thread-safe)
             for (ClientHandler client : waitingClients) {
-                client.sendMessage("⚠️ Servidor cerrándose. Gracias por usar el servicio.");
+                String serverMessage = closedServer ? 
+                "Se cayo el servidor. Finalizando la conexión."
+                : "Servidor cerrándose. Gracias por usar el servicio.";
+                if (closedServer) {
+                    System.out.println("ENTRE PAPU " + serverMessage);
+                    client.sendMessage(serverMessage);
+                } else {
+                    System.out.println(serverMessage);
+                }
             }
         } catch (IOException e) {
             System.out.println("Error cerrando el servidor: " + e.getMessage());
