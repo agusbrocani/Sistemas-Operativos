@@ -79,7 +79,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public void sendMessage(String message) {
+    public synchronized void sendMessage(String message) {
         if (isActive()) {
             out.println(message);
         }

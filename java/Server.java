@@ -38,7 +38,7 @@ public class Server {
             // Thread de monitoreo para cerrar servidor si ya no quedan clientes
             new Thread(() -> {
                 while (running) {
-                    synchronized (activeClients) {
+                    synchronized (Server.class) { // Lock común para ver ambos: active y waiting
                         if (clientServed && activeClients.isEmpty() && waitingClients.isEmpty()) {
                             System.out.println("Todos los clientes fueron atendidos. Cerrando servidor...");
                             running = false;
@@ -124,9 +124,10 @@ public class Server {
             try {
                 Thread.sleep(1000); // Revisar la cola cada segundo
 
-                // Limpiar clientes desconectados
-                removeInactiveClients();
-                synchronized (activeClients) { 
+                synchronized (Server.class) { 
+                    // Limpiar clientes desconectados
+                    removeInactiveClients();
+
                     // Procesar clientes en espera si hay espacio
                     while (activeClients.size() < MAX_ACTIVE_CLIENTS && !waitingClients.isEmpty()) {
                         ClientHandler nextClient = waitingClients.poll();
@@ -137,6 +138,7 @@ public class Server {
                         }
                     }
                 }
+
             } catch (InterruptedException e) {
                 if (running) {
                     System.out.println("Error en el procesador de cola: " + e.getMessage());
