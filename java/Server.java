@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Server {
     private static final int PORT = 12345;
@@ -11,6 +12,7 @@ public class Server {
     private static Queue<ClientHandler> waitingClients = new LinkedList<>();
     private static ServerSocket serverSocket;
     private static boolean running = true;
+    private static final AtomicInteger clientId = new AtomicInteger(1);
 
     public static void main(String[] args) {
         try {
@@ -34,6 +36,7 @@ public class Server {
                 try {
                     Socket clientSocket = serverSocket.accept();
                     handleNewConnection(clientSocket);
+                    //AGREGAR BANDERA DE QUE ATENDIO AL MENOS 1 CLIENTE => BREAK
                 } catch (IOException e) {
                     if (running) {
                         System.out.println("Error aceptando cliente: " + e.getMessage());
@@ -52,15 +55,17 @@ public class Server {
         activeClients.removeIf(client -> !client.isActive());
 
         if (activeClients.size() < MAX_ACTIVE_CLIENTS) {
+            int assignedClientId = clientId.getAndIncrement();
             // Hay espacio para un cliente activo
-            ClientHandler clientHandler = new ClientHandler(clientSocket, activeClients.size() + 1, false);
+            ClientHandler clientHandler = new ClientHandler(clientSocket, assignedClientId, false);
             activeClients.add(clientHandler);
             new Thread(clientHandler).start();
             System.out.println("Nuevo cliente conectado con ID: " + clientHandler.getClientId() + ". Total activos: " + activeClients.size());
         } else {
+            int assignedClientId = clientId.getAndIncrement();
             // No hay espacio, añadir a la cola de espera
             if (waitingClients.size() < CONNECTION_BACKLOG) {
-                ClientHandler waitingClient = new ClientHandler(clientSocket, activeClients.size() + waitingClients.size() + 1, true);
+                ClientHandler waitingClient = new ClientHandler(clientSocket, assignedClientId, true);
                 waitingClients.offer(waitingClient);
                 new Thread(waitingClient).start();
                 System.out.println("Cliente en cola con ID: " + waitingClient.getClientId() + ". Posición: " + waitingClients.size());
