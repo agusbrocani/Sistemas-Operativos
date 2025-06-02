@@ -19,10 +19,10 @@ public class ClientHandler implements Runnable {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             
             if (isWaiting) {
-                out.println("⚠️ Estás en cola de espera. Por favor, espera a que haya espacio disponible.");
-                out.println("❌ No podrás enviar mensajes hasta que seas activado.");
+                out.println("Estás en cola de espera. Por favor, espera a que haya espacio disponible.");
+                out.println("No podrás enviar mensajes hasta que seas activado.");
             } else {
-                out.println("✅ Conexión activa. Puedes empezar a enviar mensajes.");
+                out.println("Conexión activa. Puedes empezar a enviar mensajes.");
             }
         } catch (IOException e) {
             System.out.println("Error al crear el manejador del cliente: " + e.getMessage());
@@ -36,7 +36,7 @@ public class ClientHandler implements Runnable {
     public void setWaiting(boolean waiting) {
         this.isWaiting = waiting;
         if (!waiting) {
-            out.println("✅ ¡Cliente ID: " + this.getClientId() + ", ya puedes enviar mensajes! Has sido movido de la cola de espera.");
+            out.println("¡Cliente ID: " + this.getClientId() + ", ya puedes enviar mensajes! Has sido movido de la cola de espera.");
         }
     }
 
@@ -46,7 +46,7 @@ public class ClientHandler implements Runnable {
             String inputLine;
             while ((inputLine = in.readLine()) != null) {
                 if (isWaiting && !inputLine.contains("exit")) {
-                    out.println("❌ Estás en cola de espera. No puedes enviar mensajes aún.");
+                    out.println("Estás en cola de espera. No puedes enviar mensajes aún.");
                     continue;
                 }
                 

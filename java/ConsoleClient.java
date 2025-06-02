@@ -10,7 +10,7 @@ public class ConsoleClient {
             Socket socket = new Socket(SERVER_HOST, SERVER_PORT);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            BufferedReader consoleIn = new BufferedReader(new InputStreamReader(System.in))
+            BufferedReader consoleIn = new BufferedReader(new InputStreamReader(System.in));
         ) {
             // Thread para recibir respuestas del servidor
             Thread receiverThread = new Thread(() -> {
