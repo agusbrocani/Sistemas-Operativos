@@ -16,6 +16,7 @@ public class ConsoleClient {
             Thread receiverThread = new Thread(() -> {
                 try {
                     String serverResponse;
+                    System.out.println("Puerto local asignado al cliente: " + socket.getLocalPort());
                     while ((serverResponse = in.readLine()) != null) {
                         System.out.println(serverResponse);
                         if ("Servidor cerrándose. Gracias por usar el servicio.".equalsIgnoreCase(serverResponse)) {

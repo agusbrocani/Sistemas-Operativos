@@ -172,7 +172,6 @@ public class Server {
                 "Se cayo el servidor. Finalizando la conexión."
                 : "Servidor cerrándose. Gracias por usar el servicio.";
                 if (closedServer) {
-                    System.out.println("ENTRE PAPU " + serverMessage);
                     client.sendMessage(serverMessage);
                 } else {
                     System.out.println(serverMessage);
